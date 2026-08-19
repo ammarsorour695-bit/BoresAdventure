@@ -2,13 +2,13 @@
  * Main Game Class
  * Orchestrates all game systems
  */
-import { InputHandler } from './core/Input.js';
-import { Camera } from './core/Camera.js';
-import { Player } from './entities/Player.js';
-import { CollisionSystem } from './systems/CollisionSystem.js';
-import { InteractionSystem } from './systems/InteractionSystem.js';
-import { DialogueUI } from './ui/DialogueUI.js';
-import { CityMap } from './world/CityMap.js';
+import { InputHandler } from './Input.js';
+import { Camera } from './Camera.js';
+import { Player } from '../entities/Player.js';
+import { CollisionSystem } from '../systems/CollisionSystem.js';
+import { InteractionSystem } from '../systems/InteractionSystem.js';
+import { DialogueUI } from '../ui/DialogueUI.js';
+import { CityMap } from '../world/CityMap.js';
 
 export class Game {
     constructor() {
@@ -51,6 +51,8 @@ export class Game {
     }
 
     setupInputs() {
+        console.log('Setting up input handlers...');
+        
         window.addEventListener('keydown', (e) => {
             if (!this.isPlaying) return;
 
@@ -75,12 +77,24 @@ export class Game {
             }
         });
 
-        // Start button
+        // Start button - attach listener immediately
         const startBtn = document.getElementById('start-btn');
+        console.log('Start button element:', startBtn);
+        
         if (startBtn) {
             startBtn.addEventListener('click', () => {
+                console.log('Start button clicked!');
                 this.start();
             });
+            
+            // Also add touch support for mobile
+            startBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                console.log('Start button touched!');
+                this.start();
+            });
+        } else {
+            console.error('ERROR: Start button not found!');
         }
     }
 
