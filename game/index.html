@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bore's Adventure</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui-overlay">
+            <div id="mission-display">
+                <h3>Current Mission</h3>
+                <p id="mission-text">Explore the city!</p>
+            </div>
+            <div id="dialogue-box" class="hidden">
+                <p id="dialogue-text"></p>
+                <p class="continue-hint">Press SPACE to continue</p>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
