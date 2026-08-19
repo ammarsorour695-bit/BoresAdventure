@@ -1,5 +1,5 @@
 import { Entity } from './entity.js';
-import { CONSTANTS, DIRECTION } from '../core/constants.js';
+import { DIRECTION } from '../core/constants.js';
 
 /**
  * Player - The main character "Bore"

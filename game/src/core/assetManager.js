@@ -15,17 +15,20 @@ export class AssetManager {
     /**
      * Load all tile images from the assets folder
      */
-    async loadTiles(tileCount = 486) {
+    async loadTiles(tileCount = 50) {
         const promises = [];
         
-        for (let i = 0; i < tileCount; i++) {
-            const paddedNum = String(i).padStart(4, '0');
+        // Load only essential tiles for faster startup
+        const essentialTiles = [15, 22, 30, 45, 46, 47, 60, 80, 100, 105, 120, 130, 135, 140, 150, 200];
+        
+        for (const tileId of essentialTiles) {
+            const paddedNum = String(tileId).padStart(4, '0');
             const promise = this.loadImage(`tile_${paddedNum}`, `assets/tiles/tile_${paddedNum}.png`);
             promises.push(promise);
         }
 
         await Promise.all(promises);
-        console.log(`Loaded ${tileCount} tiles`);
+        console.log(`Loaded ${essentialTiles.length} essential tiles`);
     }
 
     /**

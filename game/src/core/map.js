@@ -1,4 +1,4 @@
-import { TILE_TYPES, CONSTANTS } from '../core/constants.js';
+import { TILE_TYPES, CONSTANTS } from './constants.js';
 
 /**
  * GameMap - Handles the tile-based map system

@@ -2,6 +2,35 @@
 
 An adventure game built with vanilla JavaScript where you play as Bore exploring a new city.
 
+## 🎮 Quick Start
+
+**No framework used!** This is pure vanilla JavaScript with ES6 modules - no React, no Vite, no build tools needed.
+
+### Deploy to Vercel
+
+1. Push this `game` folder to a GitHub repository
+2. Import the repository in Vercel
+3. Set the **Root Directory** to `game` (the folder containing index.html)
+4. Deploy!
+
+### Local Development
+
+You need a local web server due to ES6 module security restrictions:
+
+#### Option 1: Python (Recommended)
+```bash
+cd game
+python -m http.server 8000
+```
+
+#### Option 2: Node.js with serve
+```bash
+cd game
+npx serve .
+```
+
+Then open `http://localhost:8000` in your browser.
+
 ## Project Structure
 
 ```
@@ -55,20 +84,25 @@ game/
 
 ## Running the Game
 
-You need to serve the files with a local web server due to ES6 module security restrictions:
+The game uses ES6 modules which require a web server to run properly. This is a browser security feature, not a bug!
 
-### Option 1: Python
+### Important: No Framework Used!
+This game is built with **pure vanilla JavaScript** - no React, no Vue, no Vite, no Webpack. It's just clean, modular JavaScript code that runs directly in the browser.
+
+### Option 1: Python (Easiest)
 ```bash
 cd game
 python -m http.server 8000
 ```
 
-### Option 2: Node.js (with http-server)
+### Option 2: Node.js with npx serve
 ```bash
-npm install -g http-server
 cd game
-http-server
+npx serve .
 ```
+
+### Option 3: VS Code Live Server
+If you use VS Code, install the "Live Server" extension and click "Go Live" on index.html.
 
 Then open `http://localhost:8000` in your browser.
 
