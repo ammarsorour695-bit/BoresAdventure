@@ -1,4 +1,4 @@
-import { CONSTANTS, DIRECTION } from './constants.js';
+import { CONSTANTS, DIRECTION } from '../core/constants.js';
 
 /**
  * Entity - Base class for all game entities (player, NPCs, objects)
