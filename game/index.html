@@ -9,17 +9,30 @@
 <body>
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-        <div id="ui-overlay">
-            <div id="mission-display">
-                <h3>Current Mission</h3>
-                <p id="mission-text">Explore the city!</p>
-            </div>
-            <div id="dialogue-box" class="hidden">
-                <p id="dialogue-text"></p>
-                <p class="continue-hint">Press SPACE to continue</p>
-            </div>
+        
+        <!-- Dialogue UI Layer -->
+        <div id="ui-layer">
+            <div id="speaker-name">NPC</div>
+            <div id="dialogue-text"></div>
+            <div class="prompt">Press [SPACE] to continue</div>
+        </div>
+
+        <!-- Quest Log -->
+        <div id="quest-log">
+            <h3>Current Mission</h3>
+            <p id="quest-title">None</p>
+            <p id="quest-desc">Explore the city.</p>
+        </div>
+        
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <h1>BORE'S ADVENTURE</h1>
+            <p>Use Arrow Keys or WASD to Move</p>
+            <p>Press 'E' to Interact with NPCs</p>
+            <button id="start-btn">Start Game</button>
         </div>
     </div>
-    <script type="module" src="src/main.js"></script>
+
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>

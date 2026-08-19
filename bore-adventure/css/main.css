@@ -1,0 +1,37 @@
+/* Main CSS for Bore's Adventure */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #1a1a1a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden;
+}
+
+#game-container {
+    position: relative;
+    width: 800px;
+    height: 600px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+    background-color: #2a2a2a;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+#gameCanvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.hidden {
+    display: none !important;
+}
