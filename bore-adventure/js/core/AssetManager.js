@@ -1,118 +1,60 @@
 /**
- * Asset Manager - Phase 1
- * Handles loading and caching of all game assets
+ * Asset Manager - Loads and caches all game assets
  */
-
-export class AssetManager {
+export default class AssetManager {
     constructor() {
         this.images = new Map();
-        this.loadedCount = 0;
-        this.totalCount = 0;
-        this.onProgress = null;
-        this.onComplete = null;
+        this.tileSize = 16; // From tilemap.txt: 16px tiles
+        this.loaded = false;
     }
 
-    /**
-     * Add an image to be loaded
-     * @param {string} key - Unique identifier for the asset
-     * @param {string} src - Path to the image file
-     */
-    addImage(key, src) {
-        if (!this.images.has(key)) {
-            this.images.set(key, { src, img: null, loaded: false });
-            this.totalCount++;
+    async loadAll() {
+        const assetPath = 'assets/';
+        
+        // Load the main tilemap sprite sheet
+        await this.loadImage('tilemap', `${assetPath}tilemap.png`);
+        
+        // Load individual tiles (we'll use these for reference if needed)
+        const tilePromises = [];
+        for (let i = 0; i < 486; i++) {
+            const paddedNum = String(i).padStart(4, '0');
+            tilePromises.push(this.loadImage(`tile_${paddedNum}`, `${assetPath}tile_${paddedNum}.png`));
         }
+        
+        await Promise.all(tilePromises);
+        this.loaded = true;
+        console.log(`Asset Manager: Loaded ${this.images.size} assets`);
     }
 
-    /**
-     * Load all registered images
-     * @returns {Promise} - Resolves when all images are loaded
-     */
-    loadAll() {
+    loadImage(name, path) {
         return new Promise((resolve, reject) => {
-            const imagesArray = Array.from(this.images.entries());
-            let loaded = 0;
-
-            if (imagesArray.length === 0) {
-                resolve();
-                return;
-            }
-
-            imagesArray.forEach(([key, asset]) => {
-                const img = new Image();
-                
-                img.onload = () => {
-                    asset.img = img;
-                    asset.loaded = true;
-                    loaded++;
-                    this.loadedCount = loaded;
-
-                    if (this.onProgress) {
-                        this.onProgress(loaded, this.totalCount);
-                    }
-
-                    if (loaded >= this.totalCount) {
-                        if (this.onComplete) {
-                            this.onComplete();
-                        }
-                        resolve();
-                    }
-                };
-
-                img.onerror = (e) => {
-                    console.error(`Failed to load image: ${key} (${asset.src})`, e);
-                    asset.loaded = true; // Mark as loaded to continue
-                    loaded++;
-                    this.loadedCount = loaded;
-
-                    if (loaded >= this.totalCount) {
-                        resolve();
-                    }
-                };
-
-                img.src = asset.src;
-            });
+            const img = new Image();
+            img.onload = () => {
+                this.images.set(name, img);
+                resolve(img);
+            };
+            img.onerror = () => {
+                console.warn(`Failed to load image: ${path}`);
+                resolve(null); // Don't fail completely, just skip missing assets
+            };
+            img.src = path;
         });
     }
 
-    /**
-     * Get a loaded image by key
-     * @param {string} key - The asset key
-     * @returns {HTMLImageElement|null}
-     */
-    getImage(key) {
-        const asset = this.images.get(key);
-        return asset && asset.loaded ? asset.img : null;
+    getImage(name) {
+        return this.images.get(name);
     }
 
-    /**
-     * Check if an image is loaded
-     * @param {string} key - The asset key
-     * @returns {boolean}
-     */
-    isLoaded(key) {
-        const asset = this.images.get(key);
-        return asset && asset.loaded;
+    getTilemap() {
+        return this.images.get('tilemap');
     }
 
-    /**
-     * Get loading progress
-     * @returns {number} - Progress from 0 to 1
-     */
-    getProgress() {
-        if (this.totalCount === 0) return 1;
-        return this.loadedCount / this.totalCount;
+    getTile(index) {
+        const paddedNum = String(index).padStart(4, '0');
+        return this.images.get(`tile_${paddedNum}`);
     }
 
-    /**
-     * Clear all loaded assets
-     */
-    clear() {
-        this.images.clear();
-        this.loadedCount = 0;
-        this.totalCount = 0;
+    getTileSize() {
+        return this.tileSize;
     }
 }
-
-// Singleton instance
-export const assetManager = new AssetManager();

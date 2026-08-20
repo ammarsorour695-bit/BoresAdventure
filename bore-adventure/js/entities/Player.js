@@ -1,127 +1,119 @@
 /**
- * Player (Bore) - Phase 1 & 3
- * The main player character with movement and animations
+ * Player Entity - Bore, the main character
  */
-
-import { Entity } from './Entity.js';
-import { Animation, AnimationController } from '../rendering/Animation.js';
-import { DIRECTION, CONFIG } from '../core/constants.js';
-import { inputHandler } from '../core/Input.js';
-import { assetManager } from '../core/AssetManager.js';
-
-export class Player extends Entity {
+export default class Player {
     constructor(x, y) {
-        super({
-            x,
-            y,
-            width: CONFIG.PLAYER_WIDTH,
-            height: CONFIG.PLAYER_HEIGHT,
-            speed: CONFIG.PLAYER_SPEED,
-            name: 'Bore',
-            direction: DIRECTION.DOWN
-        });
-        
-        // Setup animations using available tile assets
-        this.setupAnimations();
-        
-        // Start with idle animation
-        this.playAnimation('idle_down');
+        this.x = x;
+        this.y = y;
+        this.width = 16;
+        this.height = 24; // Slightly taller than wide for character proportion
+        this.speed = 100; // Pixels per second
+        this.direction = 'down';
+        this.isMoving = false;
+        this.animationTimer = 0;
+        this.animationFrame = 0;
     }
 
-    /**
-     * Setup player animations using Kenney assets
-     * Using character tiles for different directions and states
-     */
-    setupAnimations() {
-        // For Phase 1, we'll use simple tile-based animations
-        // The actual character sprites will be defined based on available assets
-        
-        // Find character-related tiles (typically in certain ID ranges)
-        // Using placeholder animation frames - these will be updated when we identify the exact character tiles
-        
-        // Idle animations (single frame or subtle animation)
-        const idleFrames = [1]; // Placeholder - will use actual character tile
-        
-        // Walk animations (multiple frames)
-        const walkFrames = [1, 2, 3, 4]; // Placeholder - will use actual walking frames
-        
-        // Create directional animations
-        // Down direction
-        this.addAnimation('idle_down', new Animation('idle_down', [1], 200, true));
-        this.addAnimation('walk_down', new Animation('walk_down', [1, 2, 1, 3], 150, true));
-        
-        // Up direction
-        this.addAnimation('idle_up', new Animation('idle_up', [1], 200, true));
-        this.addAnimation('walk_up', new Animation('walk_up', [1, 2, 1, 3], 150, true));
-        
-        // Left direction
-        this.addAnimation('idle_left', new Animation('idle_left', [1], 200, true));
-        this.addAnimation('walk_left', new Animation('walk_left', [1, 2, 1, 3], 150, true));
-        
-        // Right direction
-        this.addAnimation('idle_right', new Animation('idle_right', [1], 200, true));
-        this.addAnimation('walk_right', new Animation('walk_right', [1, 2, 1, 3], 150, true));
-        
-        // Note: We'll update these frame numbers once we identify the actual character sprite tiles
-    }
-
-    /**
-     * Update player based on input
-     * @param {number} dt - Delta time in milliseconds
-     * @param {import('../core/Input.js').InputHandler} input 
-     * @param {{width: number, height: number}} worldBounds 
-     */
-    update(dt, input, worldBounds) {
-        const dir = input.getMovementDirection();
-        
-        this.isMoving = dir.x !== 0 || dir.y !== 0;
-        this.vx = dir.x * this.speed;
-        this.vy = dir.y * this.speed;
+    update(dt, input, tilemap) {
+        const direction = input.getMovementDirection();
+        this.isMoving = direction.x !== 0 || direction.y !== 0;
         
         if (this.isMoving) {
-            // Determine direction based on movement
-            if (Math.abs(dir.x) > Math.abs(dir.y)) {
-                // Horizontal movement
-                if (dir.x > 0) {
-                    this.direction = DIRECTION.RIGHT;
-                    this.playAnimation('walk_right');
-                } else {
-                    this.direction = DIRECTION.LEFT;
-                    this.playAnimation('walk_left');
-                }
+            // Update direction based on movement
+            if (Math.abs(direction.x) > Math.abs(direction.y)) {
+                this.direction = direction.x > 0 ? 'right' : 'left';
             } else {
-                // Vertical movement
-                if (dir.y > 0) {
-                    this.direction = DIRECTION.DOWN;
-                    this.playAnimation('walk_down');
-                } else {
-                    this.direction = DIRECTION.UP;
-                    this.playAnimation('walk_up');
+                this.direction = direction.y > 0 ? 'down' : 'up';
+            }
+            
+            // Calculate new position
+            const newX = this.x + direction.x * this.speed * dt;
+            const newY = this.y + direction.y * this.speed * dt;
+            
+            // Check collision before moving
+            let canMoveX = true;
+            let canMoveY = true;
+            
+            // Check horizontal collision
+            if (direction.x !== 0) {
+                const checkX = direction.x > 0 ? newX + this.width : newX;
+                const checkY1 = this.y;
+                const checkY2 = this.y + this.height - 1;
+                
+                if (tilemap.isSolid(checkX, checkY1) || tilemap.isSolid(checkX, checkY2)) {
+                    canMoveX = false;
                 }
             }
             
-            // Apply movement
-            const seconds = dt / 1000;
-            const newX = this.x + this.vx * seconds;
-            const newY = this.y + this.vy * seconds;
+            // Check vertical collision
+            if (direction.y !== 0) {
+                const checkY = direction.y > 0 ? newY + this.height : newY;
+                const checkX1 = this.x;
+                const checkX2 = this.x + this.width - 1;
+                
+                if (tilemap.isSolid(checkX1, checkY) || tilemap.isSolid(checkX2, checkY)) {
+                    canMoveY = false;
+                }
+            }
             
-            // Clamp to world bounds
-            this.x = Math.max(0, Math.min(newX, worldBounds.width - this.width));
-            this.y = Math.max(0, Math.min(newY, worldBounds.height - this.height));
+            // Apply movement if not colliding
+            if (canMoveX) {
+                this.x = newX;
+            }
+            if (canMoveY) {
+                this.y = newY;
+            }
+            
+            // Update animation
+            this.animationTimer += dt;
+            if (this.animationTimer > 0.15) { // Switch frames every 150ms
+                this.animationFrame = (this.animationFrame + 1) % 2;
+                this.animationTimer = 0;
+            }
         } else {
-            // Play idle animation based on current direction
-            this.playAnimation(`idle_${this.direction}`);
+            this.animationFrame = 0;
         }
-        
-        // Update sprite (for animations)
-        super.update(dt);
     }
 
-    /**
-     * Get interaction prompt for player
-     * @returns {string}
-     */
-    getInteractionPrompt() {
-        return 'Talk';
+    render(ctx, camera, assetManager) {
+        // For now, render as a colored rectangle
+        // We'll replace this with actual sprite rendering later
+        const screenX = Math.floor(this.x - camera.x);
+        const screenY = Math.floor(this.y - camera.y);
+        
+        // Draw Bore's body (blue shirt)
+        ctx.fillStyle = '#3498db';
+        ctx.fillRect(screenX, screenY, this.width, this.height);
+        
+        // Draw head
+        ctx.fillStyle = '#f5d0a9'; // Skin tone
+        ctx.fillRect(screenX + 2, screenY - 4, 12, 10);
+        
+        // Draw eyes based on direction
+        ctx.fillStyle = '#000';
+        let eyeOffsetX = 0;
+        let eyeOffsetY = 0;
+        
+        if (this.direction === 'left') eyeOffsetX = -2;
+        if (this.direction === 'right') eyeOffsetX = 2;
+        if (this.direction === 'up') eyeOffsetY = -2;
+        if (this.direction === 'down') eyeOffsetY = 2;
+        
+        ctx.fillRect(screenX + 4 + eyeOffsetX, screenY - 2 + eyeOffsetY, 2, 2);
+        ctx.fillRect(screenX + 10 + eyeOffsetX, screenY - 2 + eyeOffsetY, 2, 2);
+        
+        // Simple walking animation bob
+        if (this.isMoving && this.animationFrame === 1) {
+            // Slight bounce when walking
+        }
+    }
+
+    getBounds() {
+        return {
+            x: this.x,
+            y: this.y,
+            width: this.width,
+            height: this.height
+        };
     }
 }

@@ -1,242 +1,103 @@
 /**
- * Main Game Class - Phase 1
- * Orchestrates all game systems
+ * Main Game Class - Orchestrates all game systems
  */
+import AssetManager from './core/AssetManager.js';
+import Camera from './core/Camera.js';
+import InputHandler from './systems/InputHandler.js';
+import TilemapRenderer from './rendering/TilemapRenderer.js';
+import Player from './entities/Player.js';
 
-import { CONFIG, GAME_STATE } from './core/constants.js';
-import { GameLoop } from './core/GameLoop.js';
-import { inputHandler } from './core/Input.js';
-import { Camera } from './core/Camera.js';
-import { assetManager } from './core/AssetManager.js';
-import { World } from './world/World.js';
-import { dialogueSystem } from './systems/DialogueSystem.js';
-import { InteractionSystem } from './systems/InteractionSystem.js';
-
-export class Game {
-    constructor() {
-        // Canvas setup
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.canvas.width = CONFIG.CANVAS_WIDTH;
-        this.canvas.height = CONFIG.CANVAS_HEIGHT;
+export default class Game {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
         
-        // Game state
-        this.state = GAME_STATE.LOADING;
-        this.world = null;
-        this.camera = null;
-        this.interactionSystem = null;
+        // Set canvas to fullscreen
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
         
-        // Systems
-        this.gameLoop = new GameLoop();
+        this.isRunning = false;
+        this.lastTime = 0;
         
-        // UI Elements
-        this.startScreen = document.getElementById('start-screen');
-        this.questLog = document.getElementById('quest-log');
-        this.debugInfo = document.getElementById('debug-info');
-        this.fpsCounter = document.getElementById('fps-counter');
-        this.playerPosEl = document.getElementById('player-pos');
+        // Initialize systems
+        this.assetManager = new AssetManager();
+        this.input = new InputHandler();
+        this.camera = new Camera(this.canvas.width, this.canvas.height);
         
-        // Bind methods
-        this.setupInputs = this.setupInputs.bind(this);
-        this.update = this.update.bind(this);
-        this.render = this.render.bind(this);
-        this.start = this.start.bind(this);
-        
-        // Setup
-        this.setupInputs();
-        this.setupStartButton();
+        console.log('Game initialized, loading assets...');
     }
 
-    /**
-     * Setup input handlers
-     */
-    setupInputs() {
-        // Handle interaction key
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyE' && !dialogueSystem.isDialogueActive()) {
-                this.tryInteract();
-            }
-            
-            if ((e.code === 'Space' || e.code === 'Enter') && dialogueSystem.isDialogueActive()) {
-                dialogueSystem.advance();
-            }
-        });
-    }
-
-    /**
-     * Setup start button
-     */
-    setupStartButton() {
-        const startBtn = document.getElementById('start-btn');
-        startBtn.addEventListener('click', () => {
-            this.start();
-        });
-    }
-
-    /**
-     * Initialize and start the game
-     */
     async start() {
-        // Hide start screen
-        this.startScreen.classList.add('hidden');
-        
-        // Load assets
-        await this.loadAssets();
-        
-        // Create world
-        this.world = new World();
-        
-        // Setup camera
-        this.camera = new Camera(CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
-        this.camera.setTarget(this.world.getPlayer());
-        this.camera.setWorldBounds(this.world.width, this.world.height);
-        
-        // Setup interaction system
-        this.interactionSystem = new InteractionSystem(this.world);
-        
-        // Setup game loop callbacks
-        this.gameLoop.onUpdate = this.update;
-        this.gameLoop.onRender = this.render;
-        
-        // Start loop
-        this.state = GAME_STATE.PLAYING;
-        this.gameLoop.start();
-        
-        console.log('Game started!');
-    }
-
-    /**
-     * Load all game assets
-     */
-    async loadAssets() {
-        console.log('Loading assets...');
-        
-        // Register tile assets (tile_0000.png through tile_0485.png)
-        for (let i = 0; i <= 485; i++) {
-            const paddedId = String(i).padStart(4, '0');
-            assetManager.addImage(`tile_${paddedId}`, `assets/tile_${paddedId}.png`);
-        }
-        
-        // Show loading progress
-        assetManager.onProgress = (loaded, total) => {
-            console.log(`Loading: ${loaded}/${total}`);
-        };
-        
-        // Wait for all assets to load
-        await assetManager.loadAll();
-        
+        // Load all assets first
+        await this.assetManager.loadAll();
         console.log('Assets loaded!');
-    }
-
-    /**
-     * Try to interact with nearby entity
-     */
-    tryInteract() {
-        if (!this.world || !this.world.getPlayer()) return;
         
-        const player = this.world.getPlayer();
-        this.interactionSystem.tryInteract(player);
+        // Create tilemap and player after assets are loaded
+        this.tilemap = new TilemapRenderer(this.assetManager);
+        this.player = new Player(100, 100); // Start position
+        
+        console.log('Starting game loop...');
+        this.isRunning = true;
+        this.lastTime = performance.now();
+        this.loop(this.lastTime);
     }
 
-    /**
-     * Update game state
-     * @param {number} dt - Delta time in milliseconds
-     */
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        if (this.camera) {
+            this.camera.width = this.canvas.width;
+            this.camera.height = this.canvas.height;
+        }
+    }
+
+    loop(timestamp) {
+        if (!this.isRunning) return;
+        
+        const dt = (timestamp - this.lastTime) / 1000; // Convert to seconds
+        this.lastTime = timestamp;
+        
+        this.update(dt);
+        this.render();
+        
+        requestAnimationFrame((ts) => this.loop(ts));
+    }
+
     update(dt) {
-        if (this.state !== GAME_STATE.PLAYING) return;
+        // Update input state
+        this.input.update();
         
-        // Don't update player movement during dialogue
-        if (!dialogueSystem.isDialogueActive()) {
-            this.world.update(dt, inputHandler);
-        } else {
-            // Still update animations during dialogue
-            const player = this.world.getPlayer();
-            if (player) {
-                player.update(dt, { getMovementDirection: () => ({ x: 0, y: 0 }) }, { width: this.world.width, height: this.world.height });
-            }
-        }
+        // Update player
+        this.player.update(dt, this.input, this.tilemap);
         
-        // Update camera
-        this.camera.update(dt);
-        
-        // Update interaction system
-        if (!dialogueSystem.isDialogueActive()) {
-            this.interactionSystem.update(this.world.getPlayer());
-        }
-        
-        // Clear transient input states
-        inputHandler.clearTransientStates();
-        
-        // Update debug info
-        this.updateDebugInfo();
+        // Update camera to follow player
+        this.camera.follow(this.player, this.tilemap.getMapWidth(), this.tilemap.getMapHeight());
     }
 
-    /**
-     * Render the game
-     */
     render() {
-        // Clear canvas
-        this.ctx.fillStyle = '#1a1a1a';
+        // Clear screen
+        this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        if (this.world) {
-            // Render world through camera
-            this.world.render(
-                this.ctx,
-                this.camera.x,
-                this.camera.y,
-                this.canvas.width,
-                this.canvas.height
-            );
-        }
+        // Render tilemap
+        this.tilemap.render(this.ctx, this.camera);
         
-        // Render interaction prompt
-        this.renderInteractionPrompt();
+        // Render player
+        this.player.render(this.ctx, this.camera, this.assetManager);
+        
+        // Debug info
+        this.renderDebug();
     }
 
-    /**
-     * Render interaction prompt
-     */
-    renderInteractionPrompt() {
-        if (!this.interactionSystem || !this.interactionSystem.hasNearbyInteractable()) {
-            return;
-        }
-        
-        const prompt = this.interactionSystem.getPromptText();
-        const npc = this.interactionSystem.getNearbyInteractable();
-        
-        if (npc) {
-            // Draw prompt above NPC
-            const screenX = npc.x + npc.width / 2 - this.camera.x;
-            const screenY = npc.y - 20 - this.camera.y;
-            
-            this.ctx.save();
-            this.ctx.fillStyle = 'white';
-            this.ctx.font = 'bold 16px Courier New';
-            this.ctx.textAlign = 'center';
-            this.ctx.strokeStyle = 'black';
-            this.ctx.lineWidth = 3;
-            this.ctx.strokeText(prompt, screenX, screenY);
-            this.ctx.fillText(prompt, screenX, screenY);
-            this.ctx.restore();
-        }
+    renderDebug() {
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '12px monospace';
+        this.ctx.fillText(`FPS: ${Math.round(1 / ((performance.now() - this.lastTime) / 1000))}`, 10, 20);
+        this.ctx.fillText(`Pos: ${Math.round(this.player.x)}, ${Math.round(this.player.y)}`, 10, 35);
+        this.ctx.fillText(`Camera: ${Math.round(this.camera.x)}, ${Math.round(this.camera.y)}`, 10, 50);
     }
 
-    /**
-     * Update debug information
-     */
-    updateDebugInfo() {
-        if (!CONFIG.DEBUG_MODE) return;
-        
-        this.debugInfo.classList.remove('hidden');
-        this.fpsCounter.textContent = this.gameLoop.getFPS();
-        
-        if (this.world && this.world.getPlayer()) {
-            const player = this.world.getPlayer();
-            this.playerPosEl.textContent = `${Math.floor(player.x)}, ${Math.floor(player.y)}`;
-        }
+    stop() {
+        this.isRunning = false;
     }
 }
-
-// Create and export game instance
-export const game = new Game();
