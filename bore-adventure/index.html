@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bore's Adventure</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui-overlay">
+            <div id="controls-hint">
+                <p><span class="key">WASD</span> or <span class="key">Arrows</span> - Move</p>
+                <p><span class="key">SPACE</span> - Interact / Continue Dialog</p>
+            </div>
+            <div id="interaction-prompt">
+                <span>PRESS SPACE TO TALK</span>
+            </div>
+            <div id="dialog-box" class="hidden">
+                <p id="dialog-text"></p>
+            </div>
+        </div>
+    </div>
+    <script src="js/game.js"></script>
+</body>
+</html>
